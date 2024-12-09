@@ -40,6 +40,7 @@ public class ConnectRecordUtil {
         ExtractField<R> extractField = new ExtractField.Value<>();
         Map<String, String> delegateConfig = new HashMap<>();
         delegateConfig.put("field", field);
+        delegateConfig.put("replace.null.with.default", "false");
         extractField.configure(delegateConfig);
         return extractField;
     }
@@ -57,6 +58,7 @@ public class ConnectRecordUtil {
         Map<String, String> delegateConfig = new HashMap<>();
         delegateConfig.put("static.field", field);
         delegateConfig.put("static.value", value);
+        delegateConfig.put("replace.null.with.default", "false");
         insertDelegate.configure(delegateConfig);
         return insertDelegate;
     }
