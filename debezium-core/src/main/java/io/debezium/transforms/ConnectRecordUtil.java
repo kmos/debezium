@@ -25,23 +25,34 @@ public class ConnectRecordUtil {
     private static final String UPDATE_DESCRIPTION = "updateDescription";
 
     public static <R extends ConnectRecord<R>> ExtractField<R> extractAfterDelegate() {
-        return extractValueDelegate(AFTER);
+        ExtractField<R> extractField = new ExtractField.Value<>();
+        Map<String, String> delegateConfig = new HashMap<>();
+        delegateConfig.put("field", AFTER);
+
+        extractField.configure(delegateConfig);
+        return extractField;
     }
 
     public static <R extends ConnectRecord<R>> ExtractField<R> extractBeforeDelegate() {
-        return extractValueDelegate(BEFORE);
+        ExtractField<R> extractField = new ExtractField.Value<>();
+        Map<String, String> delegateConfig = new HashMap<>();
+        delegateConfig.put("field", BEFORE);
+        extractField.configure(delegateConfig);
+
+        return extractField;
     }
 
-    public static <R extends ConnectRecord<R>> ExtractField<R> extractUpdateDescriptionDelegate() {
-        return extractValueDelegate(UPDATE_DESCRIPTION);
+    public static <R extends ConnectRecord<R>> ExtractField<R> extractUpdateDescriptionDelegate(boolean replaceNullWithDefault) {
+        return extractValueDelegate(UPDATE_DESCRIPTION, replaceNullWithDefault);
     }
 
-    public static <R extends ConnectRecord<R>> ExtractField<R> extractValueDelegate(String field) {
+    public static <R extends ConnectRecord<R>> ExtractField<R> extractValueDelegate(String field, boolean replaceNullWithDefault) {
         ExtractField<R> extractField = new ExtractField.Value<>();
         Map<String, String> delegateConfig = new HashMap<>();
         delegateConfig.put("field", field);
-        delegateConfig.put("replace.null.with.default", "false");
+        delegateConfig.put("replace.null.with.default", replaceNullWithDefault ? "true" : "false");
         extractField.configure(delegateConfig);
+
         return extractField;
     }
 
@@ -53,12 +64,12 @@ public class ConnectRecordUtil {
         return extractField;
     }
 
-    public static <R extends ConnectRecord<R>> InsertField<R> insertStaticValueDelegate(String field, String value) {
+    public static <R extends ConnectRecord<R>> InsertField<R> insertStaticValueDelegate(String field, String value, boolean replaceNullWithDefault) {
         InsertField<R> insertDelegate = new InsertField.Value<>();
         Map<String, String> delegateConfig = new HashMap<>();
         delegateConfig.put("static.field", field);
         delegateConfig.put("static.value", value);
-        delegateConfig.put("replace.null.with.default", "false");
+        delegateConfig.put("replace.null.with.default", replaceNullWithDefault ? "true" : "false");
         insertDelegate.configure(delegateConfig);
         return insertDelegate;
     }

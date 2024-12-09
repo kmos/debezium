@@ -5,6 +5,8 @@
  */
 package io.debezium.transforms.extractnewstate;
 
+import static io.debezium.data.Envelope.FieldName.AFTER;
+import static io.debezium.data.Envelope.FieldName.BEFORE;
 import static io.debezium.transforms.ExtractNewRecordStateConfigDefinition.DELETED_FIELD;
 
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -30,16 +32,12 @@ public abstract class AbstractExtractRecordStrategy<R extends ConnectRecord<R>> 
     // for mongodb
     protected ExtractField<R> updateDescriptionDelegate;
 
-    public AbstractExtractRecordStrategy() {
-        init();
-    }
-
-    private void init() {
-        afterDelegate = ConnectRecordUtil.extractAfterDelegate();
-        beforeDelegate = ConnectRecordUtil.extractBeforeDelegate();
-        removedDelegate = ConnectRecordUtil.insertStaticValueDelegate(DELETED_FIELD, "true");
-        updatedDelegate = ConnectRecordUtil.insertStaticValueDelegate(DELETED_FIELD, "false");
-        updateDescriptionDelegate = ConnectRecordUtil.extractUpdateDescriptionDelegate();
+    public AbstractExtractRecordStrategy(boolean replaceNullWithDefault) {
+        afterDelegate = ConnectRecordUtil.extractValueDelegate(AFTER, replaceNullWithDefault);
+        beforeDelegate = ConnectRecordUtil.extractValueDelegate(BEFORE, replaceNullWithDefault);
+        removedDelegate = ConnectRecordUtil.insertStaticValueDelegate(DELETED_FIELD, "true", replaceNullWithDefault);
+        updatedDelegate = ConnectRecordUtil.insertStaticValueDelegate(DELETED_FIELD, "false", replaceNullWithDefault);
+        updateDescriptionDelegate = ConnectRecordUtil.extractUpdateDescriptionDelegate(replaceNullWithDefault);
     }
 
     @Override
