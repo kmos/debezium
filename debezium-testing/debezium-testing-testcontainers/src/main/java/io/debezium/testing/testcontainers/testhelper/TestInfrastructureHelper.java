@@ -103,6 +103,7 @@ public class TestInfrastructureHelper {
             .withEnv("MSSQL_PID", "Standard")
             .withEnv("MSSQL_AGENT_ENABLED", "true")
             .withPassword("Password!")
+            .withFileSystemBind("/path/on/host","/var/opt/mssql/data")
             .withInitScript("initialize-sqlserver-database.sql")
             .acceptLicense()
             .waitingFor(new LogMessageWaitStrategy()
