@@ -5,6 +5,7 @@
  */
 package io.debezium.testing.testcontainers.testhelper;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -26,6 +27,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.startupcheck.MinimumDurationRunningStartupCheckStrategy;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.lifecycle.Startable;
 import org.testcontainers.utility.DockerImageName;
 
@@ -97,6 +99,8 @@ public class TestInfrastructureHelper {
             .build();
 
     private static final MSSQLServerContainer<?> SQL_SERVER_CONTAINER = new MSSQLServerContainer<>(DockerImageName.parse("mcr.microsoft.com/mssql/server:2019-latest"))
+            .withCopyToContainer(Transferable.of(readBytesFromResource("/setup-sqlserver-database-with-encryption.sql")),
+                    "/opt/mssql-tools18/bin/setup-sqlserver-database-with-encryption.sql")
             .withNetwork(NETWORK)
             .withNetworkAliases("sqlserver")
             .withEnv("SA_PASSWORD", "Password!")
@@ -122,42 +126,23 @@ public class TestInfrastructureHelper {
     }
 
     private static Supplier<Stream<Startable>> getContainers(DATABASE database) {
-        final Startable dbStartable;
-        switch (database) {
-            case POSTGRES:
-                dbStartable = POSTGRES_CONTAINER;
-                break;
-            case MYSQL:
-                dbStartable = MYSQL_CONTAINER;
-                break;
-            case MONGODB:
-                dbStartable = MONGODB_REPLICA;
-                break;
-            case SQLSERVER:
-                dbStartable = SQL_SERVER_CONTAINER;
-                break;
-            case ORACLE:
-                dbStartable = ORACLE_CONTAINER;
-                break;
-            case MARIADB:
-                dbStartable = MARIADB_CONTAINER;
-                break;
-            case NONE:
-            case DEBEZIUM_ONLY:
-            default:
-                dbStartable = null;
-                break;
-        }
+        final Startable dbStartable = switch (database) {
+            case POSTGRES -> POSTGRES_CONTAINER;
+            case MYSQL -> MYSQL_CONTAINER;
+            case MONGODB -> MONGODB_REPLICA;
+            case SQLSERVER -> SQL_SERVER_CONTAINER;
+            case ORACLE -> ORACLE_CONTAINER;
+            case MARIADB -> MARIADB_CONTAINER;
+            default -> null;
+        };
 
         if (null != dbStartable) {
             return () -> Stream.of(KAFKA_CONTAINER, dbStartable, DEBEZIUM_CONTAINER);
         }
-        else {
-            if (DATABASE.DEBEZIUM_ONLY.equals(database)) {
-                return () -> Stream.of(DEBEZIUM_CONTAINER);
-            }
-            return () -> Stream.of(KAFKA_CONTAINER, DEBEZIUM_CONTAINER);
+        if (DATABASE.DEBEZIUM_ONLY.equals(database)) {
+            return () -> Stream.of(DEBEZIUM_CONTAINER);
         }
+        return () -> Stream.of(KAFKA_CONTAINER, DEBEZIUM_CONTAINER);
     }
 
     public static String parseDebeziumVersion(String connectorVersion) {
@@ -171,7 +156,8 @@ public class TestInfrastructureHelper {
     }
 
     public static void stopContainers() {
-        Stream<Startable> containers = Stream.of(DEBEZIUM_CONTAINER, ORACLE_CONTAINER, SQL_SERVER_CONTAINER, MONGODB_REPLICA, MYSQL_CONTAINER, POSTGRES_CONTAINER,
+        Stream<Startable> containers = Stream.of(DEBEZIUM_CONTAINER, ORACLE_CONTAINER, SQL_SERVER_CONTAINER, MONGODB_REPLICA,
+                MYSQL_CONTAINER, POSTGRES_CONTAINER,
                 MARIADB_CONTAINER,
                 KAFKA_CONTAINER);
         MoreStartables.deepStopSync(containers);
@@ -247,6 +233,16 @@ public class TestInfrastructureHelper {
                 .dependsOn(KAFKA_CONTAINER);
     }
 
+    public static void setupSqlServerTDEncryption() throws IOException, InterruptedException {
+        SQL_SERVER_CONTAINER.execInContainer(
+                "/opt/mssql-tools18/bin/sqlcmd",
+                "-S", "localhost",
+                "-U", "SA",
+                "-P", "Password!",
+                "-i", "/opt/mssql-tools18/bin/setup-sqlserver-database-with-encryption.sql",
+                "-N", "-C");
+    }
+
     public static void defaultDebeziumContainer() {
         defaultDebeziumContainer(null);
     }
@@ -289,5 +285,14 @@ public class TestInfrastructureHelper {
                 // retries on certain failure conditions with a 10s between them.
                 .atMost(120, TimeUnit.SECONDS)
                 .until(() -> TestInfrastructureHelper.getDebeziumContainer().getConnectorTaskState(connectorName, taskNumber) == state);
+    }
+
+    private static byte[] readBytesFromResource(String path) {
+        try {
+            return TestInfrastructureHelper.class.getResourceAsStream(path).readAllBytes();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
