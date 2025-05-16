@@ -8,5 +8,4 @@ package io.quarkus.debezium.deployment.engine;
 
 import io.quarkus.arc.processor.BeanInfo;
 
-public record MyData(String generatedClassName, BeanInfo delegate) {
-}
+public record InvokerMetaData(String generatedClassName, BeanInfo delegate) { }
