@@ -26,7 +26,7 @@ public class CapturingHandlerProducer {
 
     @Produces
     @Singleton
-    public DefaultCapturingHandler produce() {
+    public DebeziumCapturingHandler produce() {
         CapturingInvokerRegistry capturingInvokerRegistry = new CapturingInvokerRegistry(invokers
                 .stream()
                 .collect(Collectors.toMap(CapturingInvoker::getFullyQualifiedTableName, Function.identity())));
