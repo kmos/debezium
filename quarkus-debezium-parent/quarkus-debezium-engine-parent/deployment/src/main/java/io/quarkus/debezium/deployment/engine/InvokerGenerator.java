@@ -24,18 +24,25 @@ import io.quarkus.runtime.util.HashUtil;
 
 public class InvokerGenerator {
 
-    public static MyData generate(MethodInfo methodInfo, ClassOutput classOutput, BeanInfo beanInfo) {
+    private final ClassOutput output;
+
+    public InvokerGenerator(ClassOutput classOutput) {
+        this.output = classOutput;
+    }
+
+    public InvokerMetaData generate(MethodInfo methodInfo, BeanInfo beanInfo) {
         String name = generateName(beanInfo, methodInfo);
 
         try (ClassCreator invoker = ClassCreator.builder()
-                .classOutput(classOutput)
+                .classOutput(this.output)
                 .className(name)
                 .interfaces(CapturingInvoker.class)
                 .build()) {
 
-            String beanInstanceType = methodInfo.declaringClass().name().toString();
-
-            FieldDescriptor beanInstanceField = invoker.getFieldCreator("beanInstance", beanInstanceType)
+            FieldDescriptor beanInstanceField = invoker.getFieldCreator("beanInstance", methodInfo
+                    .declaringClass()
+                    .name()
+                    .toString())
                     .setModifiers(Modifier.PRIVATE)
                     .getFieldDescriptor();
 
@@ -65,13 +72,13 @@ public class InvokerGenerator {
             ;
 
             MethodCreator getTable = invoker.getMethodCreator("getTable", String.class);
-            getTable.returnValue(getTable.load("my_table"));
+            getTable.returnValue(getTable.load("product"));
 
-            return new MyData(name.replace('/', '.'), beanInfo);
+            return new InvokerMetaData(name.replace('/', '.'), beanInfo);
         }
     }
 
-    public static String generateName(BeanInfo bean, MethodInfo methodInfo) {
+    private String generateName(BeanInfo bean, MethodInfo methodInfo) {
         return DotNames.internalPackageNameWithTrailingSlash(bean.getImplClazz().name())
                 + DotNames.simpleName(bean.getImplClazz().name())
                 + "_DebeziumInvoker" + "_"
