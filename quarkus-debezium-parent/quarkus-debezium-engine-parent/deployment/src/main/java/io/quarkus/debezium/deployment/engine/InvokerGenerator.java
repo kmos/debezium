@@ -41,7 +41,7 @@ public class InvokerGenerator {
      *         beanInstance.method(event);
      *     }
      *
-     *     String getTable() {
+     *     String getFullyQualifiedTableName() {
      *       return "tableQualifier";
      *     }
      * }
@@ -93,7 +93,7 @@ public class InvokerGenerator {
                     .annotation(DebeziumDotNames.CapturingDotName.CAPTURING)
                     .value().value();
 
-            MethodCreator getTable = invoker.getMethodCreator("getTable", String.class);
+            MethodCreator getTable = invoker.getMethodCreator("getFullyQualifiedTableName", String.class);
             getTable.returnValue(getTable.load(String.valueOf(qualifier)));
 
             return new InvokerMetaData(name.replace('/', '.'), beanInfo);
