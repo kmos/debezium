@@ -13,6 +13,7 @@ import org.jboss.jandex.MethodInfo;
 import io.debezium.engine.RecordChangeEvent;
 import io.quarkus.arc.processor.BeanInfo;
 import io.quarkus.arc.processor.DotNames;
+import io.quarkus.debezium.deployment.dotnames.DebeziumDotNames;
 import io.quarkus.debezium.engine.CapturingInvoker;
 import io.quarkus.gizmo.ClassCreator;
 import io.quarkus.gizmo.ClassOutput;
@@ -30,8 +31,27 @@ public class InvokerGenerator {
         this.output = classOutput;
     }
 
+    /**
+     * it generates concreate classes based on the CapturingInvoker interface using gizmo:
+     * <p>
+     * public class GeneratedCapturingInvoker {
+     *     private final Object beanInstance;
+     *
+     *     void capture(RecordChangeEvent<SourceRecord> event) {
+     *         beanInstance.method(event);
+     *     }
+     *
+     *     String getTable() {
+     *       return "tableQualifier";
+     *     }
+     * }
+     *
+     * @param methodInfo
+     * @param beanInfo
+     * @return
+     */
     public InvokerMetaData generate(MethodInfo methodInfo, BeanInfo beanInfo) {
-        String name = generateName(beanInfo, methodInfo);
+        String name = generateClassName(beanInfo, methodInfo);
 
         try (ClassCreator invoker = ClassCreator.builder()
                 .classOutput(this.output)
@@ -69,16 +89,18 @@ public class InvokerGenerator {
                 capture.invokeVirtualMethod(methodDescriptor, delegate, event);
                 capture.returnVoid();
             }
-            ;
+            Object qualifier = methodInfo
+                    .annotation(DebeziumDotNames.CapturingDotName.CAPTURING)
+                    .value().value();
 
             MethodCreator getTable = invoker.getMethodCreator("getTable", String.class);
-            getTable.returnValue(getTable.load("product"));
+            getTable.returnValue(getTable.load(String.valueOf(qualifier)));
 
             return new InvokerMetaData(name.replace('/', '.'), beanInfo);
         }
     }
 
-    private String generateName(BeanInfo bean, MethodInfo methodInfo) {
+    private String generateClassName(BeanInfo bean, MethodInfo methodInfo) {
         return DotNames.internalPackageNameWithTrailingSlash(bean.getImplClazz().name())
                 + DotNames.simpleName(bean.getImplClazz().name())
                 + "_DebeziumInvoker" + "_"

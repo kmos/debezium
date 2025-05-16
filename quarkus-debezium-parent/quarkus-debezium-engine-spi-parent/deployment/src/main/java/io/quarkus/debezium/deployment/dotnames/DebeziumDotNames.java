@@ -14,7 +14,7 @@ import io.quarkus.arc.processor.BeanInfo;
 
 public class DebeziumDotNames {
     public static class CapturingDotName {
-        static final DotName CAPTURING = DotName.createSimple(Capturing.class.getName());
+        public static final DotName CAPTURING = DotName.createSimple(Capturing.class.getName());
 
         public static boolean filter(MethodInfo info) {
             return info.annotations()
