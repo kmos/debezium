@@ -197,8 +197,7 @@ public class EngineProcessor {
     }
 
     @BuildStep
-    public void generateInvokers(
-                                 List<DebeziumMediatorBuildItem> mediatorBuildItems,
+    public void generateInvokers(List<DebeziumMediatorBuildItem> mediatorBuildItems,
                                  BuildProducer<GeneratedClassBuildItem> generatedClassBuildItemBuildProducer,
                                  BuildProducer<DebeziumGeneratedInvokerBuildItem> debeziumGeneratedInvokerBuildItemBuildProducer) {
         InvokerGenerator invokerGenerator = new InvokerGenerator(new GeneratedClassGizmoAdaptor(generatedClassBuildItemBuildProducer,
@@ -207,7 +206,8 @@ public class EngineProcessor {
         mediatorBuildItems.forEach(item -> {
             InvokerMetaData metadata = invokerGenerator.generate(item.getMethodInfo(),
                     item.getBean());
-            debeziumGeneratedInvokerBuildItemBuildProducer.produce(new DebeziumGeneratedInvokerBuildItem(metadata.invokerClassName(), metadata.mediator()));
+            debeziumGeneratedInvokerBuildItemBuildProducer.produce(new DebeziumGeneratedInvokerBuildItem(metadata.invokerClassName(),
+                    metadata.mediator(), metadata.qualifier()));
         });
     }
 
@@ -226,7 +226,7 @@ public class EngineProcessor {
                         .supplier(dynamicCapturingInvokerSupplier.createInvoker(
                                 recorderContext.classProxy(item.getMediator().getImplClazz().name().toString()),
                                 (Class<? extends Invoker>) recorderContext.classProxy(item.getGeneratedClassName())))
-                        .name(DynamicCapturingInvokerSupplier.BASE_NAME + item.getMediator().getImplClazz().name())
+                        .named(DynamicCapturingInvokerSupplier.BASE_NAME + item.getMediator().getImplClazz().name() + item.getQualifier())
                         .done()));
     }
 
