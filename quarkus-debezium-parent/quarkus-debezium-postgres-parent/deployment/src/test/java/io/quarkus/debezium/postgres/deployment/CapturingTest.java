@@ -10,12 +10,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.given;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import org.apache.kafka.connect.source.SourceRecord;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
@@ -49,11 +51,12 @@ public class CapturingTest {
             .overrideConfigKey("quarkus.debezium.plugin.name", "pgoutput")
             .overrideConfigKey("quarkus.debezium.snapshot.mode", "initial")
             .overrideConfigKey("quarkus.hibernate-orm.database.generation", "drop-and-create")
-            .setLogRecordPredicate(record -> record.getLoggerName().equals("io.quarkus.debezium.postgres.deployment.CapturingTest"));
-    // .assertLogRecords((records) -> assertThat(records.getFirst().getMessage()).isEqualTo("here to stay!"));
+            .setLogRecordPredicate(record -> record.getLoggerName().equals("io.quarkus.debezium.postgres.deployment.CapturingTest"))
+            .assertLogRecords((records) -> assertThat(records.getFirst().getMessage()).isEqualTo("here to stay!"));
 
     @Test
-    void name() throws InterruptedException {
+    @DisplayName("should invoke the capture method annotated with product")
+    void shouldInvokeTheCaptureAnnotation() {
         Assertions.assertThat(debezium.configuration().get("connector.class"))
                 .isEqualTo("io.debezium.connector.postgresql.PostgresConnector");
 
@@ -62,16 +65,23 @@ public class CapturingTest {
                 .untilAsserted(() -> Assertions.assertThat(debezium.status())
                         .isEqualTo(new DebeziumStatus(DebeziumStatus.State.POLLING)));
 
-        Thread.sleep(10000);
-        System.out.println("");
+        given().await()
+                .atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> Assertions.assertThat(capture.isInvoked()).isTrue());
     }
 
     @ApplicationScoped
     static class Capture {
+        private final AtomicBoolean invoked = new AtomicBoolean(false);
 
         @Capturing("product")
         public void capture(RecordChangeEvent<SourceRecord> event) {
             logger.info("here to stay!");
+            invoked.set(true);
+        }
+
+        public boolean isInvoked() {
+            return invoked.get();
         }
     }
 }
