@@ -17,7 +17,7 @@ import io.debezium.engine.RecordChangeEvent;
 public class CapturingInvokerRegistry {
     private static final Logger logger = LoggerFactory.getLogger(CapturingInvokerRegistry.class);
 
-    Map<String, CapturingInvoker> invokers;
+    private final Map<String, CapturingInvoker> invokers;
 
     public CapturingInvokerRegistry(Map<String, CapturingInvoker> invokers) {
         this.invokers = invokers;

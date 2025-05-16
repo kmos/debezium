@@ -35,7 +35,7 @@ public class CapturingTest {
     private static final Logger logger = LoggerFactory.getLogger(CapturingTest.class);
 
     @Inject
-    CaptureProductsHandler handler;
+    CaptureProductsHandler productsHandler;
 
     @Inject
     Debezium debezium;
@@ -67,7 +67,7 @@ public class CapturingTest {
 
         given().await()
                 .atMost(10, TimeUnit.SECONDS)
-                .untilAsserted(() -> Assertions.assertThat(handler.isInvoked()).isTrue());
+                .untilAsserted(() -> Assertions.assertThat(productsHandler.isInvoked()).isTrue());
     }
 
     @ApplicationScoped

@@ -63,6 +63,8 @@ import io.quarkus.debezium.engine.CapturingHandlerProducer;
 import io.quarkus.debezium.engine.CapturingInvoker;
 import io.quarkus.debezium.engine.DebeziumRecorder;
 import io.quarkus.debezium.engine.DynamicCapturingInvokerSupplier;
+import io.quarkus.debezium.engine.FullyQualifiedTableNameResolver;
+import io.quarkus.debezium.engine.QualifiedTableNameResolverRecorder;
 import io.quarkus.deployment.GeneratedClassGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -80,7 +82,10 @@ import io.quarkus.deployment.recording.RecorderContext;
 public class EngineProcessor {
 
     @BuildStep
-    void engine(BuildProducer<AdditionalBeanBuildItem> additionalBeanProducer, List<DebeziumConnectorBuildItem> debeziumConnectorBuildItems) {
+    @Record(ExecutionTime.STATIC_INIT)
+    void engine(BuildProducer<AdditionalBeanBuildItem> additionalBeanProducer,
+                BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
+                List<DebeziumConnectorBuildItem> debeziumConnectorBuildItems, QualifiedTableNameResolverRecorder recorder) {
         debeziumConnectorBuildItems
                 .forEach(item -> additionalBeanProducer
                         .produce(AdditionalBeanBuildItem
@@ -96,6 +101,15 @@ public class EngineProcessor {
                 .setUnremovable()
                 .setDefaultScope(DotNames.APPLICATION_SCOPED)
                 .build());
+
+        syntheticBeanBuildItemBuildProducer.produce(
+                SyntheticBeanBuildItem.configure(FullyQualifiedTableNameResolver.class)
+                        .setRuntimeInit()
+                        .scope(ApplicationScoped.class)
+                        .alternative(true)
+                        .priority(1)
+                        .supplier(recorder.get())
+                        .done());
     }
 
     @BuildStep
