@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.debezium.engine.RecordChangeEvent;
 import io.debezium.runtime.Capturing;
@@ -30,6 +32,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 
 @QuarkusTestResource(value = DatabaseTestResource.class, restrictToAnnotatedClass = true)
 public class CapturingTest {
+    private static final Logger logger = LoggerFactory.getLogger(CapturingTest.class);
 
     @Inject
     CaptureProductsHandler productsHandler;
@@ -60,7 +63,11 @@ public class CapturingTest {
             .overrideConfigKey("quarkus.debezium.topic.prefix", "dbserver1")
             .overrideConfigKey("quarkus.debezium.plugin.name", "pgoutput")
             .overrideConfigKey("quarkus.debezium.snapshot.mode", "initial")
-            .overrideConfigKey("quarkus.hibernate-orm.database.generation", "drop-and-create");
+            .overrideConfigKey("quarkus.hibernate-orm.database.generation", "drop-and-create")
+            .setLogRecordPredicate(record -> record.getLoggerName().equals("io.quarkus.debezium.postgres.deployment.CapturingTest"))
+            .assertLogRecords((records) -> {
+                assertThat(records.getFirst().getMessage()).isEqualTo("should be not removed even if it's not injected in any bean");
+            });
 
     @Test
     @DisplayName("should invoke the capture method annotated with product qualifier")
@@ -105,6 +112,14 @@ public class CapturingTest {
 
         public boolean isInvoked() {
             return invoked.getAndSet(false);
+        }
+    }
+
+    @ApplicationScoped
+    static class NoInjectHandler {
+        @Capturing("public.injected")
+        public void captureOrders(RecordChangeEvent<SourceRecord> event) {
+            logger.info("should be not removed even if it's not injected in any bean");
         }
     }
 
@@ -155,4 +170,5 @@ public class CapturingTest {
             return defaultQualifier.getAndSet(false);
         }
     }
+
 }

@@ -6,6 +6,7 @@
 
 package io.quarkus.debezium.deployment.engine;
 
+import static io.quarkus.debezium.deployment.dotnames.DebeziumDotNames.CapturingDotName.CAPTURING;
 import static io.quarkus.debezium.deployment.engine.ClassesInConfigurationHandler.PREDICATE;
 import static io.quarkus.debezium.deployment.engine.ClassesInConfigurationHandler.TRANSFORM;
 import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
@@ -54,6 +55,8 @@ import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.BeanContainerBuildItem;
 import io.quarkus.arc.deployment.BeanDiscoveryFinishedBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
+import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
+import io.quarkus.arc.deployment.UnremovableBeanBuildItem.BeanClassAnnotationExclusion;
 import io.quarkus.arc.processor.DotNames;
 import io.quarkus.debezium.deployment.dotnames.DebeziumDotNames;
 import io.quarkus.debezium.deployment.items.DebeziumConnectorBuildItem;
@@ -246,5 +249,10 @@ public class EngineProcessor {
                         .filter(DebeziumDotNames.CapturingDotName::filter)
                         .map(methodInfo -> new DebeziumMediatorBuildItem(beanInfo, methodInfo)))
                 .forEach(mediatorBuildItemBuildProducer::produce);
+    }
+
+    @BuildStep
+    public List<UnremovableBeanBuildItem> removalExclusion() {
+        return List.of(new UnremovableBeanBuildItem(new BeanClassAnnotationExclusion(CAPTURING)));
     }
 }
