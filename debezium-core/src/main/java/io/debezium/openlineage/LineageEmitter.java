@@ -10,11 +10,11 @@ import io.debezium.relational.Table;
 
 public interface LineageEmitter {
 
-    public void emit(BaseSourceTask.State state);
+    void emit(BaseSourceTask.State state);
 
-    public void emit(BaseSourceTask.State state, Throwable t);
+    void emit(BaseSourceTask.State state, Throwable t);
 
-    public void emit(BaseSourceTask.State state, Table event);
+    void emit(BaseSourceTask.State state, Table event);
 
-    public void emit(BaseSourceTask.State state, Table event, Throwable t);
+    void emit(BaseSourceTask.State state, Table event, Throwable t);
 }

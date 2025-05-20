@@ -26,7 +26,7 @@ public class NoOpLineageEmitter implements LineageEmitter {
 
     @Override
     public void emit(BaseSourceTask.State state, Throwable t) {
-        LOGGER.debug("Emitting lineage event for {} with {}", state.name(), t.getMessage());
+        LOGGER.debug("Emitting lineage event for {}", state.name(), t);
     }
 
     @Override
@@ -36,6 +36,6 @@ public class NoOpLineageEmitter implements LineageEmitter {
 
     @Override
     public void emit(BaseSourceTask.State state, Table event, Throwable t) {
-        LOGGER.debug("Emitting lineage event for {} for dataset {} with {}", state.name(), event.id(), t.getMessage());
+        LOGGER.debug("Emitting lineage event for {} for dataset {}", state.name(), event.id(), t);
     }
 }
