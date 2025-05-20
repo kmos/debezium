@@ -31,11 +31,11 @@ public class NoOpLineageEmitter implements LineageEmitter {
 
     @Override
     public void emit(BaseSourceTask.State state, Table event) {
-        LOGGER.debug("Emitting lineage event for {} for dataset {}", state.name(), event.id());
+        LOGGER.debug("Emitting lineage event for {} for dataset {}", state.name(), event);
     }
 
     @Override
     public void emit(BaseSourceTask.State state, Table event, Throwable t) {
-        LOGGER.debug("Emitting lineage event for {} for dataset {}", state.name(), event.id(), t);
+        LOGGER.debug("Emitting lineage event for {} for dataset {}", state.name(), event, t);
     }
 }
