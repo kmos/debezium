@@ -27,12 +27,12 @@ public class OpenLineageJobCreator {
     public OpenLineage.Job create() {
 
         // TODO Move configurations to CommonConnectorConfig
-        List<OpenLineage.TagsJobFacetFields> tags = context.getConfiguration().getList("openlineage.integration.tags", LIST_SEPARATOR, s -> s)
+        List<OpenLineage.TagsJobFacetFields> tags = context.getTags()
                 .stream().map(pair -> pair.split(KEY_VALUE_SEPARATOR))
                 .map(pair -> context.getOpenLineage().newTagsJobFacetFields(pair[0].trim(), pair[1].trim(), TAGS_SOURCE))
                 .toList();
 
-        List<OpenLineage.OwnershipJobFacetOwners> owners = context.getConfiguration().getList("openlineage.integration.owners", LIST_SEPARATOR, s -> s)
+        List<OpenLineage.OwnershipJobFacetOwners> owners = context.owners()
                 .stream().map(pair -> pair.split(KEY_VALUE_SEPARATOR))
                 .map(pair -> context.getOpenLineage().newOwnershipJobFacetOwners(pair[0].trim(), pair[1].trim()))
                 .toList();
@@ -40,8 +40,7 @@ public class OpenLineageJobCreator {
         OpenLineage.JobFacets jobFacets = context.getOpenLineage().newJobFacetsBuilder()
                 // TODO put a default value
                 .documentation(
-                        context.getOpenLineage().newDocumentationJobFacet(
-                                context.getConfiguration().getString("openlineage.integration.job.description", "")))
+                        context.getOpenLineage().newDocumentationJobFacet(context.getIntegrationJobDescription()))
                 .ownership(context.getOpenLineage().newOwnershipJobFacet(owners))
                 .tags(context.getOpenLineage().newTagsJobFacet(tags))
                 .jobType(context.getOpenLineage().newJobTypeJobFacet(PROCESSING_TYPE, INTEGRATION, JOB_TYPE))

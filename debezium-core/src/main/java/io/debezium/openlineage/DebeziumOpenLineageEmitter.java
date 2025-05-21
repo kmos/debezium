@@ -5,13 +5,9 @@
  */
 package io.debezium.openlineage;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.ServiceLoader;
 
-import io.debezium.config.CommonConnectorConfig;
 import io.debezium.config.Configuration;
-import io.debezium.connector.common.BaseSourceTask;
-import io.debezium.relational.Table;
-import io.openlineage.client.OpenLineage;
 
 /**
  * A utility class for emitting OpenLineage events from Debezium connectors.
@@ -30,10 +26,8 @@ import io.openlineage.client.OpenLineage;
  */
 public class DebeziumOpenLineageEmitter {
 
-    private static final String CONNECTOR_NAME_PROPERTY = "name";
-
-    private static LineageEmitter lineageEmitter;
-    private static final AtomicReference<OpenLineageContext> contextRef = new AtomicReference<>();
+    private static final ServiceLoader<LineageEmitterFactory> factory = ServiceLoader.load(LineageEmitterFactory.class);
+    private static volatile LineageEmitter instance;
 
     /**
      * Initializes the lineage emitter with the given configuration.
@@ -42,97 +36,31 @@ public class DebeziumOpenLineageEmitter {
      * OpenLineage context and emitter if OpenLineage integration is enabled in the configuration.
      * The initialization is thread-safe and ensures the context is only created once.
      *
-     * @param configuration The Debezium connector configuration containing OpenLineage settings
-     * @param connName The name of the connector used for event attribution
+     * @param configuration
+     * @param connName      The name of the connector used for event attribution
      */
-    public static void init(Configuration configuration, String connName) {
-
-        if (isEnabled(configuration)) {
-            OpenLineageEventEmitter emitter = new OpenLineageEventEmitter(configuration);
-
-            if (contextRef.get() == null) {
-                OpenLineageContext ctx = new OpenLineageContext(
-                        new OpenLineage(emitter.getProducer()),
-                        configuration.subset("openlineage.integration", false),
-                        // TODO check if namespace should be configurable
-                        new OpenLineageJobIdentifier(
-                                configuration.getString(CommonConnectorConfig.TOPIC_PREFIX),
-                                configuration.getString(CONNECTOR_NAME_PROPERTY)));
-                contextRef.compareAndSet(null, ctx);
+    public static LineageEmitter getInstance(Configuration configuration, String connName) {
+        if (instance == null) {
+            synchronized (LineageEmitter.class) {
+                if (instance == null) {
+                    instance = factory
+                            .stream()
+                            .findFirst()
+                            .map(ServiceLoader.Provider::get)
+                            .orElse((ignore, ignore2) -> new NoOpLineageEmitter())
+                            .get(configuration, connName);
+                }
             }
-            lineageEmitter = new OpenLineageEmitter(connName, configuration, contextRef.get(), emitter);
         }
-        else {
-            lineageEmitter = new NoOpLineageEmitter();
+
+        return instance;
+    }
+
+    public static LineageEmitter getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("DebeziumOpenLineageEmitter not yet initialized");
         }
+        return instance;
     }
 
-    private static void checkInitialized() {
-        if (lineageEmitter == null) {
-            throw new IllegalStateException("DebeziumOpenLineageEmitter not initialized. Call init() first.");
-        }
-    }
-
-    private static boolean isEnabled(Configuration configuration) {
-        return configuration.getBoolean("openlineage.integration.enabled", false);
-    }
-
-    /**
-     * Emits a lineage event for the given source task state.
-     *
-     * @param state The current state of the source task
-     * @throws IllegalStateException If the emitter has not been initialized
-     */
-    public static void emit(BaseSourceTask.State state) {
-
-        checkInitialized();
-        lineageEmitter.emit(state);
-    }
-
-    /**
-     * Emits a lineage event for the given source task state and exception.
-     * <p>
-     * This method is typically used for error reporting.
-     *
-     * @param state The current state of the source task
-     * @param t The exception that occurred during processing
-     * @throws IllegalStateException If the emitter has not been initialized
-     */
-    public static void emit(BaseSourceTask.State state, Throwable t) {
-
-        checkInitialized();
-        lineageEmitter.emit(state, null, t);
-    }
-
-    /**
-     * Emits a lineage event for the given source task state and table event.
-     * <p>
-     * This method is typically used for emitting input dataset lineage.
-     *
-     * @param state The current state of the source task
-     * @param event The table event containing metadata for lineage
-     * @throws IllegalStateException If the emitter has not been initialized
-     */
-    public static void emit(BaseSourceTask.State state, Table event) {
-
-        checkInitialized();
-        lineageEmitter.emit(state, event, null);
-    }
-
-    /**
-     * Emits a lineage event for the given source task state, table event, and exception.
-     * <p>
-     * This method provides the most detailed lineage information, including both table
-     * metadata and any exception that occurred during processing.
-     *
-     * @param state The current state of the source task
-     * @param event The table event containing metadata for lineage, may be {@code null}
-     * @param t The exception that occurred during processing, may be {@code null}
-     * @throws IllegalStateException If the emitter has not been initialized
-     */
-    public static void emit(BaseSourceTask.State state, Table event, Throwable t) {
-
-        checkInitialized();
-        lineageEmitter.emit(state, event, t);
-    }
 }

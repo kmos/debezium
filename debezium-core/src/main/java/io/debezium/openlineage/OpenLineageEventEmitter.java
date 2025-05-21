@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.debezium.Module;
-import io.debezium.config.Configuration;
 import io.openlineage.client.Clients;
 import io.openlineage.client.OpenLineage;
 import io.openlineage.client.OpenLineageClient;
@@ -27,22 +26,10 @@ public class OpenLineageEventEmitter {
 
     private final OpenLineageClient openLineageClient;
 
-    public OpenLineageEventEmitter(Configuration config) {
-
-        // TODO Move configs to CommonConnectorConfig
-        if (config.getBoolean("openlineage.integration.enabled", false)) {
-            openLineageClient = Clients.newClient(() -> List.of(
-                    Path.of(config.getString("openlineage.integration.config.path", "."))));
-        }
-        else {
-            openLineageClient = null;
-        }
+    public OpenLineageEventEmitter(String path) {
+        this.openLineageClient = Clients.newClient(() -> List.of(Path.of(path)));
 
         LOGGER.debug("OpenLineage client v{} configured", getClientVersion());
-    }
-
-    public OpenLineageEventEmitter(OpenLineageClient client) {
-        this.openLineageClient = client;
     }
 
     public void emit(OpenLineage.RunEvent event) {

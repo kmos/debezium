@@ -41,6 +41,7 @@ import io.debezium.config.Configuration;
 import io.debezium.config.Field;
 import io.debezium.function.LogPositionValidator;
 import io.debezium.openlineage.DebeziumOpenLineageEmitter;
+import io.debezium.openlineage.LineageEmitter;
 import io.debezium.pipeline.ChangeEventSourceCoordinator;
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.notification.channels.NotificationChannel;
@@ -75,6 +76,7 @@ public abstract class BaseSourceTask<P extends Partition, O extends OffsetContex
     private static final Duration MAX_POLL_PERIOD_IN_MILLIS = Duration.ofMillis(TimeUnit.HOURS.toMillis(1));
     private Configuration config;
     private List<SignalChannelReader> signalChannels;
+    private LineageEmitter emitter;
 
     protected void validateAndLoadSchemaHistory(CommonConnectorConfig config, LogPositionValidator logPositionValidator, Offsets<P, O> previousOffsets,
                                                 DatabaseSchema schema,
@@ -240,8 +242,9 @@ public abstract class BaseSourceTask<P extends Partition, O extends OffsetContex
             setTaskState(State.INITIAL);
             config = Configuration.from(props);
 
-            DebeziumOpenLineageEmitter.init(config, connectorName());
-            DebeziumOpenLineageEmitter.emit(State.INITIAL);
+            emitter = DebeziumOpenLineageEmitter.getInstance(config, connectorName());
+
+            emitter.emit(State.INITIAL);
 
             retriableRestartWait = config.getDuration(CommonConnectorConfig.RETRIABLE_RESTART_WAIT, ChronoUnit.MILLIS);
             // need to reset the delay or you only get one delayed restart
@@ -262,7 +265,7 @@ public abstract class BaseSourceTask<P extends Partition, O extends OffsetContex
                 this.coordinator = start(config);
                 setTaskState(State.RUNNING);
 
-                DebeziumOpenLineageEmitter.emit(State.RUNNING);
+                emitter.emit(State.RUNNING);
 
             }
             catch (RetriableException e) {
@@ -413,7 +416,7 @@ public abstract class BaseSourceTask<P extends Partition, O extends OffsetContex
                 result = true;
             }
             else if (currentState == State.RESTARTING) {
-                DebeziumOpenLineageEmitter.emit(State.RESTARTING, getErrorHandler().getProducerThrowable());
+                emitter.emit(State.RESTARTING, getErrorHandler().getProducerThrowable());
                 // we're in restart mode... check if it's time to restart
                 if (restartDelay.hasElapsed()) {
                     LOGGER.info("Attempting to restart task.");
@@ -473,7 +476,7 @@ public abstract class BaseSourceTask<P extends Partition, O extends OffsetContex
             }
             else {
                 setTaskState(State.STOPPED);
-                DebeziumOpenLineageEmitter.emit(State.STOPPED);
+                emitter.emit(State.STOPPED);
             }
         }
         finally {
