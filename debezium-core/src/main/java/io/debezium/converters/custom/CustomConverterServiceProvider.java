@@ -4,14 +4,17 @@
  * Licensed under the Apache Software License version 2.0, available at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package io.debezium.config;
+package io.debezium.converters.custom;
 
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
+import io.debezium.config.CommonConnectorConfig;
+import io.debezium.config.Configuration;
+import io.debezium.relational.CustomConverterRegistry;
 import org.apache.kafka.connect.data.SchemaBuilder;
 
-import io.debezium.relational.CustomConverterRegistry;
 import io.debezium.service.spi.ServiceProvider;
 import io.debezium.service.spi.ServiceRegistry;
 import io.debezium.spi.converter.ConvertedField;
@@ -21,6 +24,7 @@ import io.debezium.util.Strings;
 public class CustomConverterServiceProvider implements ServiceProvider<CustomConverterRegistry> {
 
     public static final String CONVERTER_TYPE_SUFFIX = ".type";
+    private final ServiceLoader<CustomConverterFactory> converterFactories = ServiceLoader.load(CustomConverterFactory.class);
 
     public CustomConverterServiceProvider() {
     }
@@ -33,6 +37,14 @@ public class CustomConverterServiceProvider implements ServiceProvider<CustomCon
                 .stream()
                 .map(name -> createConverter(configuration, name))
                 .collect(Collectors.toList());
+
+        List<CustomConverter<SchemaBuilder, ConvertedField>> additionalConverters = converterFactories
+                .findFirst()
+                .map(CustomConverterFactory::get)
+                .stream()
+                .toList();
+
+        customConverters.addAll(additionalConverters);
 
         return new CustomConverterRegistry(customConverters);
     }
