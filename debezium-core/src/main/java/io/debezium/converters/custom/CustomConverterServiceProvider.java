@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
+import org.apache.kafka.connect.data.SchemaBuilder;
+
 import io.debezium.config.CommonConnectorConfig;
 import io.debezium.config.Configuration;
 import io.debezium.relational.CustomConverterRegistry;
-import org.apache.kafka.connect.data.SchemaBuilder;
-
 import io.debezium.service.spi.ServiceProvider;
 import io.debezium.service.spi.ServiceRegistry;
 import io.debezium.spi.converter.ConvertedField;
