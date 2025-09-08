@@ -6,12 +6,8 @@
 package io.quarkus.debezium.postgres.deployment;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.inject.Singleton;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.debezium.connector.postgresql.Module;
 import io.debezium.connector.postgresql.PostgresConnector;
@@ -40,7 +36,6 @@ import io.quarkus.deployment.pkg.steps.NativeOrNativeSourcesBuild;
 
 public class PostgresEngineProcessor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PostgresEngineProcessor.class.getName());
     public static final String POSTGRESQL = Module.name();
 
     @BuildStep

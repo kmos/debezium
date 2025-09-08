@@ -22,9 +22,6 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.debezium.connector.postgresql.PostgresConnector;
 import io.debezium.jdbc.JdbcConfiguration;
 import io.debezium.runtime.CaptureGroup;
