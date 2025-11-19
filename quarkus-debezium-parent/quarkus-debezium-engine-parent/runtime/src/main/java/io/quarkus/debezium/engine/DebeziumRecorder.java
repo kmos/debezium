@@ -26,7 +26,7 @@ import io.quarkus.runtime.annotations.Recorder;
 @Recorder
 public class DebeziumRecorder {
 
-    private static final String CLUSTER = "kv-raft-cluster";
+    private static final String CLUSTER = "debezium-cluster";
     private static final String CFG = "raft.xml";
     private final RuntimeValue<DebeziumEngineConfiguration> configuration;
 
