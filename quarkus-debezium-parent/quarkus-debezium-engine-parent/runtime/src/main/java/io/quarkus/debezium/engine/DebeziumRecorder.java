@@ -8,6 +8,8 @@ package io.quarkus.debezium.engine;
 
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.jgroups.JChannel;
 import org.jgroups.protocols.raft.Role;
@@ -33,49 +35,58 @@ public class DebeziumRecorder {
     }
 
     public void startEngine(ShutdownContext context, BeanContainer container) {
-        DebeziumConnectorRegistry debeziumConnectorRegistry = container.beanInstance(DebeziumConnectorRegistry.class);
 
-        System.setProperty("jgroups.bind_addr", "127.0.0.1");
-        System.setProperty("jgroups.bind_port", configuration.getValue().debeziumPort().get());
-        System.setProperty("raft.id", configuration.getValue().debeziumRaftId().get());
+        ExecutorService executor = Executors.newFixedThreadPool(1);
 
-        try (JChannel jChannel = new JChannel(CFG)) {
-            jChannel.setName(configuration.getValue().debeziumRaftId().get());
-            RaftHandle raftHandle = new RaftHandle(jChannel, new StateMachine() {
-                @Override
-                public byte[] apply(byte[] bytes, int i, int i1, boolean b) throws Exception {
-                    return new byte[0];
+        executor.submit(() -> {
+            DebeziumConnectorRegistry debeziumConnectorRegistry = container.beanInstance(DebeziumConnectorRegistry.class);
+
+            System.setProperty("jgroups.bind_addr", "127.0.0.1");
+            System.setProperty("jgroups.bind_port", configuration.getValue().debeziumPort().get());
+            System.setProperty("raft.id", configuration.getValue().debeziumRaftId().get());
+
+            try (JChannel jChannel = new JChannel(CFG)) {
+                jChannel.setName(configuration.getValue().debeziumRaftId().get());
+                RaftHandle raftHandle = new RaftHandle(jChannel, new StateMachine() {
+                    @Override
+                    public byte[] apply(byte[] bytes, int i, int i1, boolean b) throws Exception {
+                        return new byte[0];
+                    }
+
+                    @Override
+                    public void readContentFrom(DataInput dataInput) throws Exception {
+
+                    }
+
+                    @Override
+                    public void writeContentTo(DataOutput dataOutput) throws Exception {
+
+                    }
+                }).raftId(configuration.getValue().debeziumRaftId().get());
+
+                raftHandle.addRoleListener(role -> {
+                    if (role == Role.Leader) {
+                        debeziumConnectorRegistry
+                                .engines()
+                                .stream()
+                                .map(debezium -> new DebeziumRunner(DebeziumThreadHandler.getThreadFactory(debezium), debezium))
+                                .forEach(runner -> {
+                                    runner.start();
+                                    context.addShutdownTask(runner::shutdown);
+                                });
+                    }
+                });
+
+                jChannel.connect(CLUSTER);
+
+                while (jChannel.isConnected()) {
+                    // ignore
                 }
-
-                @Override
-                public void readContentFrom(DataInput dataInput) throws Exception {
-
-                }
-
-                @Override
-                public void writeContentTo(DataOutput dataOutput) throws Exception {
-
-                }
-            }).raftId(configuration.getValue().debeziumRaftId().get());
-
-            raftHandle.addRoleListener(role -> {
-                if (role == Role.Leader) {
-                    debeziumConnectorRegistry
-                            .engines()
-                            .stream()
-                            .map(debezium -> new DebeziumRunner(DebeziumThreadHandler.getThreadFactory(debezium), debezium))
-                            .forEach(runner -> {
-                                runner.start();
-                                context.addShutdownTask(runner::shutdown);
-                            });
-                }
-            });
-
-            jChannel.connect(CLUSTER);
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
 
     }
 
