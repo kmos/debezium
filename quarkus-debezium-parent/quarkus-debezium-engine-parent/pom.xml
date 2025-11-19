@@ -19,6 +19,16 @@
                 <artifactId>quarkus-debezium-engine-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.jgroups</groupId>
+                <artifactId>jgroups</artifactId>
+                <version>5.4.10.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jgroups</groupId>
+                <artifactId>jgroups-raft</artifactId>
+                <version>1.1.3.Final</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

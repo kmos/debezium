@@ -66,6 +66,16 @@ class PostgresEngineProducerTest {
             public Map<String, DevServicesConfig> devservices() {
                 return Map.of();
             }
+
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
+            }
         }).get(new EngineManifest("default"))
                 .configuration())
                 .isEqualTo(Map.of(
@@ -114,6 +124,16 @@ class PostgresEngineProducerTest {
             @Override
             public Map<String, DevServicesConfig> devservices() {
                 return Map.of();
+            }
+
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
             }
         }).get(new EngineManifest("default"))
                 .configuration())
@@ -217,6 +237,16 @@ class PostgresEngineProducerTest {
             @Override
             public Map<String, DevServicesConfig> devservices() {
                 return Map.of();
+            }
+
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
             }
         });
 

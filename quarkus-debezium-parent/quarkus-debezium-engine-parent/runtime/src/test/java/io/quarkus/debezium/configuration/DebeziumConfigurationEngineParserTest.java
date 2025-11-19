@@ -74,6 +74,16 @@ class DebeziumConfigurationEngineParserTest {
             public Map<String, DevServicesConfig> devservices() {
                 return Map.of();
             }
+
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
+            }
         });
 
         assertThat(configurations).containsOnly(new MultiEngineConfiguration("default", DEBEZIUM_CONFIGURATION));
@@ -96,6 +106,16 @@ class DebeziumConfigurationEngineParserTest {
             @Override
             public Map<String, DevServicesConfig> devservices() {
                 return Map.of();
+            }
+
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
             }
         });
 
@@ -122,6 +142,16 @@ class DebeziumConfigurationEngineParserTest {
             public Map<String, DevServicesConfig> devservices() {
                 return Map.of();
             }
+
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
+            }
         }));
     }
 
@@ -144,6 +174,16 @@ class DebeziumConfigurationEngineParserTest {
             @Override
             public Map<String, DevServicesConfig> devservices() {
                 return Map.of();
+            }
+
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
             }
         });
 
@@ -172,6 +212,16 @@ class DebeziumConfigurationEngineParserTest {
                 return Map.of();
             }
 
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
+            }
+
         });
 
         assertThat(actual).containsExactlyInAnyOrder(new MultiEngineConfiguration("products", DEBEZIUM_CONFIGURATION),
@@ -197,6 +247,16 @@ class DebeziumConfigurationEngineParserTest {
             @Override
             public Map<String, DevServicesConfig> devservices() {
                 return Map.of();
+            }
+
+            @Override
+            public Optional<String> debeziumPort() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> debeziumRaftId() {
+                return Optional.empty();
             }
 
         });

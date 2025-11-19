@@ -42,6 +42,20 @@ public interface DebeziumEngineConfiguration {
     @WithName("debezium.devservices")
     Map<String, DevServicesConfig> devservices();
 
+    /**
+     * something beautiful
+     * @return
+     */
+    @WithName("debezium.raft.port")
+    Optional<String> debeziumPort();
+
+    /**
+     * something beautiful
+     * @return
+     */
+    @WithName("debezium.raft.id")
+    Optional<String> debeziumRaftId();
+
     interface Capturing {
 
         /**
